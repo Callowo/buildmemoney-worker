@@ -4,6 +4,7 @@ Two output paths:
   - "short"   → 1080x1920 portrait, fill-screen talking head, bg music, no graphics
   - "youtube" → 1920x1080 landscape, dynamic cuts (face ↔ B-roll), FFmpeg-generated
                  animated graphics (intro banner, subscribe, like, outro), bg music
+                 #v2
 """
 
 import runpod
