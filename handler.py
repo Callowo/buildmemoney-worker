@@ -17,7 +17,6 @@ import json
 import math
 import shutil
 from pathlib import Path
-from huggingface_hub import hf_hub_download
 
 # ── Config ────────────────────────────────────────────────────────────────────
 R2_BUCKET        = "buildmemoney-videos"
@@ -47,25 +46,22 @@ def ensure_models():
     ckpt_dir.mkdir(parents=True, exist_ok=True)
     gfp_dir.mkdir(parents=True, exist_ok=True)
 
-    hf_kwargs = {"token": HF_TOKEN} if HF_TOKEN else {}
-
-    # SadTalker checkpoints from HuggingFace
-    sadtalker_files = [
-        "SadTalker_V0.0.2_256.safetensors",
-        "SadTalker_V0.0.2_512.safetensors",
-        "mapping_00109-model.pth.tar",
-        "mapping_00229-model.pth.tar",
-    ]
-    for fname in sadtalker_files:
+   # SadTalker checkpoints from GitHub releases (stable, no auth needed)
+    sadtalker_files = {
+        "SadTalker_V0.0.2_256.safetensors": "https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2-rc/SadTalker_V0.0.2_256.safetensors",
+        "SadTalker_V0.0.2_512.safetensors": "https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2-rc/SadTalker_V0.0.2_512.safetensors",
+        "mapping_00109-model.pth.tar":       "https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2-rc/mapping_00109-model.pth.tar",
+        "mapping_00229-model.pth.tar":       "https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2-rc/mapping_00229-model.pth.tar",
+    }
+    for fname, url in sadtalker_files.items():
         dest = ckpt_dir / fname
         if not dest.exists():
-            print(f"[MODELS] Downloading {fname}...")
-            hf_hub_download(
-                repo_id="vinthony/SadTalker",
-                filename=fname,
-                local_dir=str(ckpt_dir),
-                **hf_kwargs
-            )
+            print(f"[MODELS] Downloading {fname} from GitHub releases...")
+            r = requests.get(url, stream=True, timeout=600)
+            r.raise_for_status()
+            with open(dest, "wb") as f:
+                for chunk in r.iter_content(65536):
+                    f.write(chunk)
 
     # GFPGAN / facexlib weights from GitHub releases (no auth needed)
     github_weights = [
