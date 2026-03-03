@@ -27,9 +27,25 @@ RUN git clone https://github.com/OpenTalker/SadTalker.git
 WORKDIR /app/SadTalker
 RUN pip install --no-cache-dir -r requirements.txt
 
+# ── Download SadTalker + GFPGAN model weights at build time ───────────────────
+# Baked into image so cold starts never need to download models (~1.5 GB total)
+RUN mkdir -p /app/SadTalker/checkpoints /app/SadTalker/gfpgan/weights && \
+    wget -q --show-progress -O /app/SadTalker/checkpoints/SadTalker_V0.0.2_256.safetensors \
+        "https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2-rc/SadTalker_V0.0.2_256.safetensors" && \
+    wget -q --show-progress -O /app/SadTalker/checkpoints/SadTalker_V0.0.2_512.safetensors \
+        "https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2-rc/SadTalker_V0.0.2_512.safetensors" && \
+    wget -q --show-progress -O /app/SadTalker/checkpoints/mapping_00109-model.pth.tar \
+        "https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2-rc/mapping_00109-model.pth.tar" && \
+    wget -q --show-progress -O /app/SadTalker/checkpoints/mapping_00229-model.pth.tar \
+        "https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2-rc/mapping_00229-model.pth.tar" && \
+    wget -q --show-progress -O /app/SadTalker/gfpgan/weights/GFPGANv1.4.pth \
+        "https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/GFPGANv1.4.pth" && \
+    wget -q --show-progress -O /app/SadTalker/gfpgan/weights/detection_Resnet50_Final.pth \
+        "https://github.com/xinntao/facexlib/releases/download/v0.1.0/detection_Resnet50_Final.pth" && \
+    wget -q --show-progress -O /app/SadTalker/gfpgan/weights/parsing_parsenet.pth \
+        "https://github.com/xinntao/facexlib/releases/download/v0.2.2/parsing_parsenet.pth"
+
 # ── Worker Python dependencies ────────────────────────────────────────────────
-# NOTE: SadTalker model weights are downloaded at container startup by handler.py
-# using the HF_TOKEN environment variable. This avoids build-time auth issues.
 WORKDIR /app
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
