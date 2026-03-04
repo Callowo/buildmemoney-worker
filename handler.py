@@ -167,7 +167,6 @@ def run_sadtalker(source_image, driven_audio, output_dir,
         "--result_dir", output_dir,
         "--preprocess", preprocess,
         "--size", str(size),
-        "--face3dvis",
     ]
     if still:
         cmd.append("--still")
