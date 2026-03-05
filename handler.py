@@ -681,18 +681,28 @@ def handler(event):
         output_path     = os.path.join(work_dir, output_filename)
 
         if job_type == "youtube":
-            # Fetch B-roll if not provided
-            if not broll_clips and niche:
-                print(f"[HANDLER] Fetching B-roll from Pexels for niche: {niche}")
-                broll_clips = fetch_broll_from_pexels(niche, count=6)
+    # Prefer fresh fetch using script-specific search terms (avoids CDN URL expiry)
+    broll_search_terms_raw = job_input.get("broll_search_terms", "")
+    if broll_search_terms_raw and PEXELS_API_KEY:
+        terms = [t.strip() for t in broll_search_terms_raw.split(",") if t.strip()][:5]
+        print(f"[HANDLER] Fetching B-roll from Pexels using {len(terms)} search terms")
+        broll_clips = []
+        for term in terms:
+            urls = fetch_broll_from_pexels(term, count=2)
+            if urls:
+                broll_clips.append(urls[0])
+    # Fall back to niche if no search terms
+    if not broll_clips and niche:
+        print(f"[HANDLER] Fetching B-roll from Pexels for niche: {niche}")
+        broll_clips = fetch_broll_from_pexels(niche, count=6)
 
-            broll_paths = []
-            for i, url in enumerate(broll_clips):
-                bp = os.path.join(work_dir, f"broll_raw_{i}.mp4")
-                download_file(url, bp)
-                broll_paths.append(bp)
+    broll_paths = []
+    for i, url in enumerate(broll_clips):
+        bp = os.path.join(work_dir, f"broll_raw_{i}.mp4")
+        download_file(url, bp)
+        broll_paths.append(bp)
 
-            produce_youtube(raw_video, broll_paths, music_path, output_path)
+    produce_youtube(raw_video, broll_paths, music_path, output_path)
 
         else:  # "short" (default)
             print("[HANDLER] Producing SHORT (portrait) video…")
